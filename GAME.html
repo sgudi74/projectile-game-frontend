@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Projectile Motion - University of Bridgeport Playground</title>
+<style>
+  :root{
+    --bg: rgba(26, 0, 51, 0.6);
+    --panel: rgba(54, 0, 107, 0.65);
+    --muted: #E0BBE4;
+    --accent: #87CEEB;
+    --accent-2: #FFD700;
+  }
+  *{box-sizing:border-box}
+  html,body{
+    height:100%;
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background: url('ub.logo.png') no-repeat center top fixed;
+    background-size: 80% auto;
+    color:#e8f2ff;
+  }
+  /* Login overlay */
+  #login { position:fixed; inset:0; display:grid; place-items:center; background:transparent; z-index:40; }
+  .login-card {
+    width: min(640px,92vw);
+    background: var(--panel);
+    padding:22px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .login-card h2{margin:0 0 10px 0}
+  .login-card label{display:block;color:var(--muted);margin-top:8px}
+  .login-card input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:var(--bg);color:var(--muted);margin-top:6px}
+  .login-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+  button{background:var(--bg);color:var(--accent);padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer}
+  button.primary{background:var(--accent-2);border-color: rgba(255,215,0,.35);color:#05202a;font-weight:700}
+
+  /* App layout */
+  #app{
+    display:none;
+    height:100vh;
+    display:grid;
+    grid-template-rows:auto 1fr;
+    gap:12px;
+    padding:12px;
+    background: transparent;
+  }
+  header.appbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    background: var(--panel);
+    padding: 10px 15px;
+    border-radius: 10px;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .player-info{display:flex;gap:10px;align-items:center}
+  .stat{background:var(--bg);padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  .main{display:flex;gap:12px;height:calc(100vh - 120px)}
+  .left{width:min(420px,36%);display:flex;flex-direction:column;gap:12px}
+  .controls{
+    background: var(--panel);
+    padding:12px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.03);
+    overflow:auto;
+  }
+  .control{margin-bottom:10px}
+  .control label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+  input[type="range"]{width:100%}
+  input[type="number"]{width:96px;padding:6px 8px;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);border-radius:8px}
+  .row-between{display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .canvas-wrap{
+    flex:1;
+    background: var(--panel);
+    border-radius:12px;
+    padding:12px;
+    border:1px solid rgba(255,255,255,0.03);
+    position:relative;
+  }
+  #scene{width:100%;height:100%;border-radius:8px;background:transparent;touch-action:none;display:block}
+  .hud{position:absolute;right:18px;top:18px;background:rgba(0,0,0,0.7);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);color:#FFFFFF;z-index:9}
+  .overlay{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:10}
+  .message{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px 22px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);font-weight:700;color:var(--accent-2);pointer-events:auto}
+  #endModal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;padding:18px;background:rgba(1,6,12,0.95);border-radius:12px;display:none;text-align:center;width:360px}
+  #endModal p{color:#e7f9ff}
+  #confettiCanvas{position:absolute;inset:0;pointer-events:none;z-index:45}
+
+  @media (max-width:880px){ .main{flex-direction:column;height:auto}.left{width:100%} }
+</style>
+</head>
+<body>
+  <div id="login">
+    <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <h2 id="loginTitle">Enter player details</h2>
+      <div style="color:var(--muted);margin-bottom:8px">Please enter your name and school email to play.</div>
+      <label for="playerName">Player name</label>
+      <input id="playerName" type="text" placeholder="e.g., John" />
+      <label for="playerEmail">School email</label>
+      <input id="playerEmail" type="email" placeholder="e.g., john@school.edu" />
+      <div class="login-actions">
+        <button id="startDemo">Start Demo (skip)</button>
+        <button id="startGame" class="primary">Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app">
+    <header class="appbar">
+      <div class="player-info">
+        <div class="stat">Player: <span id="playerBadge">—</span></div>
+        <div class="stat">Email: <span id="emailBadge">—</span></div>
+        <div class="stat">Shots left: <span id="attemptsBadge">5</span></div>
+        <div class="stat">Score: <span id="scoreBadge">0</span></div>
+      </div>
+      <div>
+        <button id="resetGame">Restart</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <div class="left">
+        <div class="controls">
+          <div class="control">
+            <label>Launcher height (m)</label>
+            <div class="row-between">
+              <input id="launcherHeightRange" type="range" min="0.5" max="6" step="0.1" value="1.2">
+              <input id="launcherHeightNum" type="number" min="0.5" max="6" step="0.1" value="1.2">
+            </div>
+          </div>
+
+          <div class="control">
+            <label>Launcher angle (°)</label>
+            <div class="row-between">
+              <input id="angleRange" type="range" min="0" max="90" step="1" value="28">
+              <input id="angleNum" type="number" min="0" max="90" step="1" value="28">
+            </div>
+          </div>
+
+          <div class="control">
+            <label>Launch speed (m/s)</label>
+            <div class="row-between">
+              <input id="speedRange" type="range" min="5" max="120" step="1" value="35">
+              <input id="speedNum" type="number" min="1" max="300" step="1" value="35">
+            </div>
+          </div>
+
+          <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:8px 0">
+
+          <div class="control">
+            <label>Wall horizontal distance from launcher (m)</label>
+            <div class="row-between">
+              <input id="wallDistRange" type="range" min="6" max="60" step="0.5" value="12">
+              <input id="wallDistNum" type="number" min="0" max="300" step="0.1" value="12">
+            </div>
+          </div>
+
+          <div class="control">
+            <label>Wall height (m)</label>
+            <div class="row-between">
+              <input id="wallHeightRange" type="range" min="0.5" max="10" step="0.1" value="2.5">
+              <input id="wallHeightNum" type="number" min="0" max="20" step="0.1" value="2.5">
+            </div>
+          </div>
+
+          <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:8px 0">
+
+          <div class="control">
+            <label>Target distance from launcher (m)</label>
+            <div class="row-between">
+              <input id="targetDistRange" type="range" min="15" max="120" step="0.5" value="28">
+              <input id="targetDistNum" type="number" min="0" max="500" step="0.1" value="28">
+            </div>
+          </div>
+
+          <div class="control">
+            <label>Target center height above ground (m) (kept for UI)</label>
+            <div class="row-between">
+              <input id="targetHeightRange" type="range" min="0" max="6" step="0.05" value="0" disabled>
+              <input id="targetHeightNum" type="number" min="0" max="20" step="0.01" value="0" disabled>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+            <button id="shootBtn" class="primary">Shoot</button>
+            <button id="nextBtn" disabled>Next Shot</button>
+            <button id="resetShotBtn">Reset Shot</button>
+            <div style="flex:1"></div>
+            <div style="font-size:13px;color:var(--muted)">Rings: 100 / 75 / 50 / 25 / 15</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="scene" aria-label="Launcher game canvas"></canvas>
+        <canvas id="confettiCanvas"></canvas>
+        <div class="hud" id="hud">t=0.00s · x=0.00m · y=0.00m</div>
+        <div class="overlay" id="overlay" aria-hidden="true"></div>
+        <div id="endModal">
+          <p id="endText"></p>
+          <div id="leaderboard-container"></div>
+          <div style="margin-top:12px">
+            <button id="tryAgainBtn">Try Again</button>
+            <button id="quitBtn">Quit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const dpr = Math.max(1, window.devicePixelRatio || 1);
+const hitSound = new Audio('hit.mp3');
+hitSound.load();
+const missSound = new Audio('miss.mp3');
+missSound.load();
+const winSound = new Audio('win.mp3');
+winSound.load(); 
+const wallHitSound = new Audio('wall_hit.mp3');
+wallHitSound.load();
+const whooshSound = new Audio('whoosh.mp3');
+whooshSound.load();
+
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function distance(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+function randFloat(min, max) { return Math.random() * (max - min) + min; }
+async function submitScore(playerName, playerEmail, finalScore) {
+    const endpoint = 'https://projectile-game-backend.onrender.com/submit-score';
+    const data = {
+        name: playerName,
+        email: playerEmail,
+        score: finalScore
+    };
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+            console.log('Score submitted successfully!');
+        } else {
+            console.error('Failed to submit score.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function fetchAndDisplayScores() {
+    const endpoint = 'https://projectile-game-backend.onrender.com/high-scores';
+    const leaderboardList = document.createElement('ul');
+
+    try {
+        const response = await fetch(endpoint);
+        const scores = await response.json();
+        const container = document.getElementById('leaderboard-container');
+        if (container) {
+            container.innerHTML = '<h3>Top Scores</h3>'; // Add a title
+
+            if (scores.length === 0) {
+                container.innerHTML += '<p>No scores yet. Be the first!</p>';
+            } else {
+                const list = document.createElement('ol');
+                scores.forEach((s, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${index + 1}. ${s.name} (${s.email})- ${s.score} pts`;
+                    list.appendChild(listItem);
+                });
+                container.appendChild(list);
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching scores:', error);
+    }
+}
+
+/* ---------- DOM refs ---------- */
+const login = $('login'), startGameBtn = $('startGame'), startDemo = $('startDemo'), playerNameInput = $('playerName'), playerEmailInput = $('playerEmail');
+const app = $('app'), playerBadge = $('playerBadge'), emailBadge = $('emailBadge'), attemptsBadge = $('attemptsBadge'), scoreBadge = $('scoreBadge');
+const launcherHeightRange = $('launcherHeightRange'), launcherHeightNum = $('launcherHeightNum');
+const angleRange = $('angleRange'), angleNum = $('angleNum');
+const speedRange = $('speedRange'), speedNum = $('speedNum');
+const wallDistRange = $('wallDistRange'), wallDistNum = $('wallDistNum');
+const wallHeightRange = $('wallHeightRange'), wallHeightNum = $('wallHeightNum');
+const targetDistRange = $('targetDistRange'), targetDistNum = $('targetDistNum');
+const shootBtn = $('shootBtn'), nextBtn = $('nextBtn'), resetShotBtn = $('resetShotBtn');
+const scene = $('scene'), confettiCanvas = $('confettiCanvas'), hud = $('hud'), overlay = $('overlay');
+const endModal = $('endModal'), endText = $('endText'), tryAgainBtn = $('tryAgainBtn'), quitBtn = $('quitBtn');
+const resetGameBtn = $('resetGame');
+
+/* Linking Range inputs with number inputs*/
+function linkRangeNumber(rangeEl, numEl){
+  rangeEl.addEventListener('input', e => { if(document.activeElement !== numEl) numEl.value = rangeEl.value; });
+  numEl.addEventListener('input', e => { if(document.activeElement !== rangeEl) rangeEl.value = numEl.value; });
+}
+linkRangeNumber(launcherHeightRange, launcherHeightNum);
+linkRangeNumber(angleRange, angleNum);
+linkRangeNumber(speedRange, speedNum);
+linkRangeNumber(wallDistRange, wallDistNum);
+linkRangeNumber(wallHeightRange, wallHeightNum);
+linkRangeNumber(targetDistRange, targetDistNum);
+
+/* Canvas setup & DPI-aware rendering */
+const ctx = scene.getContext('2d');
+const cctx = confettiCanvas.getContext('2d');
+
+function resizeCanvas(){
+  const rect = scene.getBoundingClientRect();
+  scene.width = Math.round(rect.width * dpr);
+  scene.height = Math.round(rect.height * dpr);
+  scene.style.width = rect.width + 'px';
+  scene.style.height = rect.height + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  confettiCanvas.width = scene.width;
+  confettiCanvas.height = scene.height;
+  confettiCanvas.style.width = scene.style.width;
+  confettiCanvas.style.height = scene.style.height;
+  cctx.setTransform(dpr,0,0,dpr,0,0);
+  draw();
+}
+window.addEventListener('resize', resizeCanvas);
+
+/* World coords (meters) */
+const BALL_RADIUS_M = 0.12;
+const WALL_WIDTH_M = 0.6;
+const GRAVITY = 9.81;
+const rings = [0.4,0.9,1.5,2.2,3.0];
+const ringScores = [100,75,50,25,15];
+
+/* camera pan (world meters) */
+let pan = { x: 0, y: 0 };
+
+/* compute world size (meters) */
+function computeExtents(){
+  const tDist = parseFloat(targetDistNum.value);
+  const W = Math.max(tDist + rings[rings.length-1] + 6, parseFloat(wallDistNum.value)+6, 12);
+  const H = Math.max(parseFloat(launcherHeightNum.value)+4, parseFloat(wallHeightNum.value)+4, 6);
+  return { W, H };
+}
+
+/* world <-> canvas */
+function worldToCanvas(x,y){
+  const rect = scene.getBoundingClientRect();
+  const margins = { left:40, right:40, top:30, bottom:40 };
+  const ext = computeExtents();
+  const usableW = rect.width - margins.left - margins.right;
+  const usableH = rect.height - margins.top - margins.bottom;
+  const sx = usableW / ext.W, sy = usableH / ext.H;
+  const s = Math.min(sx, sy);
+  const cx = margins.left + (x - pan.x) * s;
+  const cy = rect.height - margins.bottom - (y - pan.y) * s;
+  return { x: cx, y: cy, s: s };
+}
+
+function canvasToWorld(cx, cy){
+  const rect = scene.getBoundingClientRect();
+  const margins = { left:40, right:40, top:30, bottom:40 };
+  const ext = computeExtents();
+  const usableW = rect.width - margins.left - margins.right;
+  const usableH = rect.height - margins.top - margins.bottom;
+  const sx = usableW / ext.W, sy = usableH / ext.H;
+  const s = Math.min(sx, sy);
+  const x = (cx - margins.left)/s + pan.x;
+  const y = (rect.height - margins.bottom - cy)/s + pan.y;
+  return { x, y };
+}
+
+/* ---------- Draw functions ---------- */
+function drawGrid(){
+  const { W, H } = computeExtents();
+  const step = pickStep(Math.max(W,H));
+  ctx.save();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(255,255,255,0.03)";
+  for(let gx=0; gx<=W; gx+=step){ const a=worldToCanvas(gx,0), b=worldToCanvas(gx,H); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+  for(let gy=0; gy<=H; gy+=step){ const a=worldToCanvas(0,gy), b=worldToCanvas(W,gy); ctx.beginPath(); ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke(); }
+  ctx.restore();
+}
+function pickStep(maxVal){
+  const pow = Math.pow(10, Math.floor(Math.log10(maxVal || 1)));
+  const candidates = [pow/5, pow/2, pow, pow*2];
+  for (const c of candidates) if(maxVal / c <= 12) return Math.max(c, 0.1);
+  return candidates[candidates.length-1];
+}
+
+/* utility: rounded rectangle on canvas */
+function roundRect(ctx, x, y, w, h, r){
+  const radius = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+/* Launcher drawing — more realistic, eye-catchy cannon */
+function drawLauncherGraphic(launcherX, launcherH, angleDeg){
+  const angleRad = angleDeg * Math.PI/180;
+  const muzzleLen = 1.2; // meters - slightly longer barrel
+  const base = worldToCanvas(launcherX, launcherH);
+
+  ctx.save();
+  ctx.translate(base.x, base.y);
+
+  // Wheels/Base Shadow
+  ctx.beginPath();
+  ctx.ellipse(0, 15, 30, 15, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fill();
+
+  // Base Body - more industrial grey/steel
+  const baseWidth = 50; // pixels
+  const baseHeight = 25; // pixels
+  ctx.fillStyle = '#696969'; // Dim Gray
+  roundRect(ctx, -baseWidth/2, -baseHeight/2 + 5, baseWidth, baseHeight, 8); ctx.fill();
+  ctx.strokeStyle = '#4F4F4F'; ctx.lineWidth = 2; ctx.stroke(); // Darker grey border
+
+  // Barrel: rotate and draw - metallic gradient
+  ctx.save();
+  ctx.rotate(-angleRad);
+
+  const barrelLenPx = muzzleLen * worldToCanvas(1,0).s; // Scale barrel length
+  const barrelHeightPx = 25; // Fixed height for the barrel
+
+  const g = ctx.createLinearGradient(0, -barrelHeightPx/2, barrelLenPx + 20, barrelHeightPx/2);
+  g.addColorStop(0, '#A9A9A9'); // DarkGray - start
+  g.addColorStop(0.5, '#D3D3D3'); // LightGrey - middle (highlight)
+  g.addColorStop(1, '#A9A9A9'); // DarkGray - end
+  ctx.fillStyle = g;
+  roundRect(ctx, 0, -barrelHeightPx/2, barrelLenPx + 20, barrelHeightPx, 10); // Barrel with round edges
+  ctx.fill();
+  ctx.strokeStyle = '#808080'; ctx.lineWidth = 2; ctx.stroke(); // Grey border
+
+  // Muzzle (end of barrel)
+  ctx.fillStyle = '#4F4F4F'; // Darker grey
+  roundRect(ctx, barrelLenPx + 15, -barrelHeightPx/2 + 2, 15, barrelHeightPx - 4, 5); // Recessed muzzle
+  ctx.fill();
+
+  ctx.restore(); // End barrel rotation
+
+  // Elevation Mechanism
+  ctx.beginPath();
+  ctx.arc(-baseWidth/4, 0, 10, 0, Math.PI * 2);
+  ctx.fillStyle = '#808080'; ctx.fill();
+  ctx.strokeStyle = '#4F4F4F'; ctx.lineWidth = 1; ctx.stroke();
+
+  ctx.restore(); // End base translation
+}
+
+/* Eye-catchy wall */
+function drawWall(wallX, wallH){
+  const tl = worldToCanvas(wallX, wallH);
+  const br = worldToCanvas(wallX + WALL_WIDTH_M, 0);
+
+  const wallCanvasWidth = br.x - tl.x;
+  const wallCanvasHeight = br.y - tl.y;
+
+  // Base Concrete/Stone color
+  ctx.fillStyle = '#8B4513'; // SaddleBrown
+  ctx.fillRect(tl.x, tl.y, wallCanvasWidth, wallCanvasHeight);
+
+  // Add a subtle gradient for depth (lighter at top, darker at bottom)
+  const gradient = ctx.createLinearGradient(tl.x, tl.y, tl.x, br.y);
+  gradient.addColorStop(0, 'rgba(255,255,255,0.1)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.2)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(tl.x, tl.y, wallCanvasWidth, wallCanvasHeight);
+
+  // Edge/Outline for definition
+  ctx.strokeStyle='#5C4033';
+  ctx.lineWidth=2;
+  ctx.strokeRect(tl.x, tl.y, wallCanvasWidth, wallCanvasHeight);
+
+  // Optional: Add some "brick" lines for texture
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  const numBricks = Math.floor(wallCanvasHeight / 20);
+  for (let i = 1; i < numBricks; i++) {
+    const yLine = tl.y + i * 20;
+    ctx.beginPath();
+    ctx.moveTo(tl.x, yLine);
+    ctx.lineTo(br.x, yLine);
+    ctx.stroke();
+  }
+}
+
+/* Target drawn flat on ground with eye-catchy colors */
+function drawTargetFlat(targetX){
+  const center = worldToCanvas(targetX, 0);
+  const s = worldToCanvas(1,0).s;
+  const vScale = 0.52;
+  const colors = ['#FF2400', '#FFA500', '#FFB961', '#FFFF00', '#FFFFFF'];
+  for(let i = rings.length-1; i >= 0; i--){
+    const r = rings[i] * s;
+    ctx.beginPath();
+    ctx.ellipse(center.x, center.y, r, r * vScale, 0, 0, Math.PI*2);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  const bullR = rings[0] * s;
+  ctx.beginPath();
+  ctx.ellipse(center.x, center.y, bullR * 0.6, bullR * 0.6 * vScale, 0, 0, Math.PI*2);
+  ctx.fillStyle = '#FF2400';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(center.x, center.y, 6, 6 * vScale, 0, 0, Math.PI*2);
+  ctx.fillStyle = '#990000'; ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.stroke();
+}
+
+/* draw path and ball */
+function drawPathAndBall(){
+  ctx.save(); ctx.lineWidth=3; ctx.strokeStyle='#00FF7F'; ctx.beginPath();
+  for(let i=0;i<path.length;i++){
+    const p=worldToCanvas(path[i].x, path[i].y);
+    if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+  }
+  ctx.stroke(); ctx.restore();
+
+  const b = worldToCanvas(state.pos.x, state.pos.y);
+  ctx.beginPath(); ctx.arc(b.x, b.y, BALL_RADIUS_M * worldToCanvas(1,0).s, 0, Math.PI*2);
+  ctx.fillStyle = '#FF4500'; ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.stroke();
+}
+
+/* full draw */
+function draw(){
+  const rect = scene.getBoundingClientRect();
+  ctx.clearRect(0,0, rect.width, rect.height);
+  drawGrid();
+  const g0 = worldToCanvas(0,0), g1 = worldToCanvas(computeExtents().W, 0);
+  ctx.strokeStyle='rgba(200,230,255,0.06)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(g0.x,g0.y); ctx.lineTo(g1.x,g1.y); ctx.stroke();
+
+  const launcherX = 1.2;
+  const launcherH = parseFloat(launcherHeightNum.value);
+  const angleDeg = parseFloat(angleNum.value);
+  drawLauncherGraphic(launcherX, launcherH, angleDeg);
+
+  const wallX = parseFloat(wallDistNum.value), wallH = parseFloat(wallHeightNum.value);
+  drawWall(wallX, wallH);
+
+  const targetX = parseFloat(targetDistNum.value);
+  drawTargetFlat(targetX);
+
+  drawPathAndBall();
+}
+
+/* Physics */
+let state = { pos:{x:0,y:0},pos_init:{x:0,y:0}, vel:{x:0,y:0}, t:0, dt:1/120 };
+let path = [];
+let running = false, landed = false;
+let shotsLeft = 5, shotsMade = 0, score = 0;
+let raf = null;
+
+/* prepare shot (set ball at canon) */
+function prepareShot(){
+  const launcherX = 1.2;
+  const launcherH = parseFloat(launcherHeightNum.value);
+  const angleRad = parseFloat(angleNum.value) * Math.PI/180;
+  const muzzleLen = 1.2; // Adjusted muzzle length
+  const muzzle = { x: launcherX + Math.cos(angleRad)*muzzleLen, y: launcherH + Math.sin(angleRad)*muzzleLen };
+  const speed = parseFloat(speedNum.value);
+//set initial positions and velocities
+  state.pos.x = launcherX; 
+  state.pos.y = launcherH;
+  state.pos_init.x = launcherX;
+  state.pos_init.y = launcherH;
+  state.vel.x = speed * Math.cos(angleRad); //v0x=v0*cos(θ)
+  state.vel.y = speed * Math.sin(angleRad); //v0y=v0*sin(θ)
+  state.t = 0; path = [{ x: state.pos.x, y: state.pos.y }]; landed=false; running=false; nextBtn.disabled=true;
+  updateHud(); draw();
+}
+
+/* HUD */
+function updateHud(){ hud.textContent = `Instantaneous Position of Projectile t=${state.t.toFixed(2)}s · x=${state.pos.x.toFixed(2)}m · y=${state.pos.y.toFixed(2)}m`; attemptsBadge.textContent = shotsLeft; scoreBadge.textContent = score; }
+
+/* step function */
+function step(){
+  if(!running) return;
+  const dt = state.dt;
+  state.t += dt;
+  state.pos.x = state.pos_init.x + state.vel.x * state.t;//x(t) = x0+V0x*t
+  state.pos.y = state.pos_init.y + state.vel.y * state.t - 0.5 * GRAVITY * Math.pow(state.t, 2);//y(t) = y0 + V0y*t − 0.5*g*t²
+  path.push({ x: state.pos.x, y: Math.max(0, state.pos.y) });
+
+  // wall collision
+  const wallX = parseFloat(wallDistNum.value), wallH = parseFloat(wallHeightNum.value);
+  if (state.pos.x + BALL_RADIUS_M > wallX && state.pos.x - BALL_RADIUS_M < wallX + WALL_WIDTH_M) {
+    if (state.pos.y - BALL_RADIUS_M <= wallH && state.pos.y + BALL_RADIUS_M >= 0) {
+      running=false; landed=true;wallHitSound.play(); onShotEnd({ kind:'wall' }); draw(); updateHud(); return;
+    }
+  }
+
+  // ground impact (target lies at y=0)
+  if (state.pos.y <= 0) {
+    running=false; landed=true;
+    state.pos.y = 0;
+    const targetX = parseFloat(targetDistNum.value);
+    const dx = Math.abs(state.pos.x - targetX);
+    let idx = rings.findIndex(r => dx <= r);
+    if (idx >= 0) { const pts = ringScores[idx]; hitSound.play();onShotEnd({ kind:'target', points: pts, idx, dist: dx }); }
+    else missSound.play();
+                      onShotEnd({ kind:'ground' });
+    draw(); updateHud(); return;
+  }
+
+  // auto-pan toward ball if it leaves center area
+  autoPanToBall();
+
+  updateHud(); draw();
+  raf = requestAnimationFrame(step);
+}
+
+/* shot end handling */
+function onShotEnd(result){
+  let msg='';
+  if (result.kind === 'target'){ score += result.points; msg = `Hit! +${result.points} pts`; }
+  else if (result.kind === 'wall'){ msg = 'Hit the wall! 0 pts'; }
+  else msg = 'Missed. 0 pts';
+  shotsLeft -= 1; updateHud(); showOverlay(msg);
+    whooshSound.pause();
+    whooshSound.currentTime = 0;
+  if (shotsLeft <= 0){
+    setTimeout(()=> {
+      endText.textContent = (score>0) ? `🎉 Congratulations ${player.name || 'Player'} — your score is ${score}!` : `😕 Better luck next time, ${player.name || 'Player'}. Score: ${score}` ;
+      endModal.style.display='block';
+      fetchAndDisplayScores();
+      if(score > 0) {
+        winSound.play(); 
+        startConfetti();
+      } else { 
+        stopConfetti(); 
+      }
+      shootBtn.disabled=true; nextBtn.disabled=true; resetShotBtn.disabled=true;
+      enableManualControls(true);
+      submitScore(player.name, player.email, score);
+    }, 900);
+  } else {
+    setRandomPositions();
+    prepareShot();
+  }
+}
+
+/* overlay message */
+function showOverlay(text){
+  overlay.innerHTML = ''; const el = document.createElement('div'); el.className='message'; el.textContent = text; overlay.appendChild(el); overlay.style.pointerEvents='none';
+  setTimeout(()=>{ overlay.innerHTML=''; }, 1400);
+}
+
+/* ---------- Camera: manual pan + auto-follow ---------- */
+function autoPanToBall(){
+  const rect = scene.getBoundingClientRect();
+  const b = worldToCanvas(state.pos.x, state.pos.y);
+  const margin = 0.25;
+  const left = rect.width * margin, right = rect.width*(1-margin), top = rect.height*margin, bottom = rect.height*(1-margin);
+  if (b.x < left || b.x > right || b.y < top || b.y > bottom){
+    const s = worldToCanvas(1,0).s;
+    const desiredPanX = state.pos.x - (rect.width/2)/s;
+    const desiredPanY = state.pos.y - (rect.height/2)/s;
+    pan.x += (desiredPanX - pan.x) * 0.12;
+    pan.y += (desiredPanY - pan.y) * 0.12;
+    pan.x = Math.max(0, pan.x); pan.y = Math.max(0, pan.y);
+  }
+}
+
+/* manual pan with pointer drag and object dragging */
+let pointerDown=false, pointerGrab=null;
+scene.addEventListener('pointerdown', e=>{
+  scene.setPointerCapture && scene.setPointerCapture(e.pointerId);
+  pointerDown=true;
+  const rect = scene.getBoundingClientRect();
+  const localX = e.clientX - rect.left, localY = e.clientY - rect.top;
+  const world = canvasToWorld(localX, localY);
+  const launcherX = 1.2, launcherH = parseFloat(launcherHeightNum.value);
+  const muzzleLen = 1.2;
+  const muzzle = { x: launcherX + Math.cos(parseFloat(angleNum.value)*Math.PI/180)*muzzleLen, y: launcherH + Math.sin(parseFloat(angleNum.value)*Math.PI/180)*muzzleLen };
+  if (!running && distance(world, muzzle) <= 0.35){ pointerGrab = {type:'muzzle'}; return; }
+  const wallX = parseFloat(wallDistNum.value), wallH = parseFloat(wallHeightNum.value);
+  if (!running && wallDistRange.disabled && world.x >= wallX - 0.6 && world.x <= wallX + WALL_WIDTH_M + 0.6 && world.y <= wallH + 0.5 && world.y >= -1){ pointerGrab = {type:'wall'}; return; }
+  const targetX = parseFloat(targetDistNum.value), targetY = 0;
+  if (!running && targetDistRange.disabled && Math.abs(world.x - targetX) <= 1.5 && Math.abs(world.y - targetY) <= 1.5){ pointerGrab = {type:'target'}; return; }
+  pointerGrab = { type:'pan', start:{x:e.clientX, y:e.clientY, panX:pan.x, panY:pan.y} };
+});
+
+scene.addEventListener('pointermove', e=>{
+  if(!pointerDown || !pointerGrab || running) return;
+  const rect = scene.getBoundingClientRect();
+  const localX = e.clientX - rect.left, localY = e.clientY - rect.top;
+  const world = canvasToWorld(localX, localY);
+  if (pointerGrab.type === 'muzzle'){
+    const dx = world.x - 1.2, dy = world.y - parseFloat(launcherHeightNum.value);
+    let ang = Math.atan2(dy, dx) * 180 / Math.PI; ang = clamp(ang, 0, 90);
+    angleNum.value = Math.round(ang); angleRange.value = angleNum.value;
+    const newH = clamp(world.y, parseFloat(launcherHeightRange.min), parseFloat(launcherHeightRange.max));
+    launcherHeightNum.value = newH.toFixed(2); launcherHeightRange.value = newH.toFixed(2);
+    if(!running) prepareShot();
+  } else if (pointerGrab.type === 'wall' && !wallDistRange.disabled){
+    let newWallX = Math.max(6, world.x); 
+    if (newWallX >= parseFloat(targetDistNum.value) - 1.0) newWallX = parseFloat(targetDistNum.value) - 1.0;
+    wallDistNum.value = newWallX.toFixed(2); wallDistRange.value = newWallX.toFixed(2);
+    let newWallH = clamp(world.y, parseFloat(wallHeightRange.min), parseFloat(wallHeightRange.max));
+    wallHeightNum.value = newWallH.toFixed(2); wallHeightRange.value = newWallH.toFixed(2);
+    if(!running) prepareShot();
+  } else if (pointerGrab.type === 'target' && !targetDistRange.disabled){
+    let newTargetX = Math.max(parseFloat(wallDistNum.value) + 1.0, world.x); 
+    targetDistNum.value = newTargetX.toFixed(2); targetDistRange.value = newTargetX.toFixed(2);
+    if(!running) prepareShot();
+  } else if (pointerGrab.type === 'pan'){
+    const dx = e.clientX - pointerGrab.start.x, dy = e.clientY - pointerGrab.start.y;
+    const s = worldToCanvas(1,0).s;
+    pan.x = Math.max(0, pointerGrab.start.panX - dx / s);
+    pan.y = Math.max(0, pointerGrab.start.panY + dy / s);
+    draw();
+  }
+});
+
+scene.addEventListener('pointerup', e=>{ pointerDown=false; pointerGrab=null; scene.releasePointerCapture && scene.releasePointerCapture(e.pointerId); });
+
+/* keyboard pan (arrows) */
+window.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft') pan.x = Math.max(0, pan.x - 2);
+  if(e.key==='ArrowRight') pan.x = pan.x + 2;
+  if(e.key==='ArrowUp') pan.y = Math.max(0, pan.y - 1.5);
+  if(e.key==='ArrowDown') pan.y = pan.y + 1.5;
+  draw();
+});
+
+/* ---------- UI & game flow ---------- */
+let player = { name:'', email:'' };
+
+$('startGame').addEventListener('click', ()=>{
+  const name = playerNameInput.value.trim(), email = playerEmailInput.value.trim();
+  if(!name){ alert('Please enter your name'); playerNameInput.focus(); return; }
+  if(!email){ alert('Please enter school email'); playerEmailInput.focus(); return; }
+  if(!/^[^\s@]+@[^\s@]+\.(edu|school\.edu|school\.com)$/i.test(email)){
+    if(!confirm('Email does not look like a school email. Continue?')) return;
+  }
+  player.name = name; player.email = email; beginGame();
+});
+$('startDemo').addEventListener('click', ()=>{ player.name='Demo Player'; player.email='demo@school.edu'; beginGame(); });
+
+function setRandomPositions(){
+  const newTargetX = randFloat(15, 100);
+  const newWallX = randFloat(6, newTargetX - 1);
+  const newWallH = randFloat(0.5, 10);
+
+  targetDistNum.value = newTargetX.toFixed(2);
+  targetDistRange.value = newTargetX.toFixed(2);
+  wallDistNum.value = newWallX.toFixed(2);
+  wallDistRange.value = newWallX.toFixed(2);
+  wallHeightNum.value = newWallH.toFixed(2);
+  wallHeightRange.value = newWallH.toFixed(2);
+  pan = { x: 0, y: 0 };
+}
+
+function enableManualControls(enabled){
+  wallDistRange.disabled = !enabled;
+  wallDistNum.disabled = !enabled;
+  wallHeightRange.disabled = !enabled;
+  wallHeightNum.disabled = !enabled;
+  targetDistRange.disabled = !enabled;
+  targetDistNum.disabled = !enabled;
+}
+
+function beginGame(){
+  login.style.display='none'; app.style.display='grid'; playerBadge.textContent = player.name; emailBadge.textContent = player.email;
+  shotsLeft = 5; score = 0; shotsMade = 0; running=false; endModal.style.display='none';
+  setRandomPositions();
+  enableManualControls(false);
+  prepareShot(); resizeCanvas(); updateHud();
+}
+
+resetGameBtn.addEventListener('click', ()=>{
+  if(confirm('Restart and return to login?')){ login.style.display='grid'; app.style.display='none'; playerNameInput.value=''; playerEmailInput.value=''; overlay.innerHTML=''; stopConfetti(); if(raf) cancelAnimationFrame(raf); enableManualControls(true); }
+});
+
+$('shootBtn').addEventListener('click', ()=>{ 
+  if(running || shotsLeft <= 0) return; 
+  shotsMade++;
+  whooshSound.play();
+  prepareShot(); 
+  running=true; 
+  overlay.innerHTML=''; 
+  raf = requestAnimationFrame(step); 
+});
+$('resetShotBtn').addEventListener('click', ()=>{ prepareShot(); overlay.innerHTML=''; });
+tryAgainBtn.addEventListener('click', ()=>{ endModal.style.display='none'; stopConfetti(); shotsLeft=5; score=0; shotsMade = 0; shootBtn.disabled=false; resetShotBtn.disabled=false; enableManualControls(false); setRandomPositions(); prepareShot(); updateHud(); });
+quitBtn.addEventListener('click', ()=>{ endModal.style.display='none'; stopConfetti(); login.style.display='grid'; app.style.display='none'; enableManualControls(true); });
+
+/* update when sliders change */
+[launcherHeightRange, launcherHeightNum, angleRange, angleNum, speedRange, speedNum,
+  wallDistRange, wallDistNum, wallHeightRange, wallHeightNum,
+  targetDistRange, targetDistNum].forEach(el => { el.addEventListener('input', ()=>{
+  if(parseFloat(wallDistNum.value) > parseFloat(targetDistNum.value) - 1){ wallDistNum.value = Math.max(1, parseFloat(targetDistNum.value) - 1); wallDistRange.value = wallDistNum.value; }
+  if(!running) prepareShot(); updateHud();
+ }); });
+
+/* ---------- Confetti control (purple & white while end modal visible) ---------- */
+let confettiInterval = null;
+function startConfetti(){
+  if(confettiInterval) return;
+  confettiInterval = setInterval(()=> {
+    confetti({ particleCount: 10, angle: 60, spread: 50, origin:{ x: 0.05 }, colors: ['#7b2cbf','#ffffff','#b794f4'] });
+    confetti({ particleCount: 10, angle: 120, spread: 50, origin:{ x: 0.95 }, colors: ['#7b2cbf','#ffffff','#b794f4'] });
+  }, 220);
+}
+function stopConfetti(){ if(confettiInterval){ clearInterval(confettiInterval); confettiInterval = null; } }
+
+/* ---------- Init ---------- */
+prepareShot(); resizeCanvas(); updateHud();
+</script>
+</body>
+</html>
