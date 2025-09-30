@@ -22,7 +22,8 @@
     color:#e8f2ff;
   }
   /* Login overlay */
-  #login { position:fixed; inset:0; display:grid; place-items:center; background:transparent; z-index:40; }
+  #login { position:fixed; inset:0; display:grid; place-items:center; background:transparent; z-index:40;
+  }
   .login-card {
     width: min(640px,92vw);
     background: var(--panel);
@@ -36,6 +37,115 @@
   .login-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
   button{background:var(--bg);color:var(--accent);padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer}
   button.primary{background:var(--accent-2);border-color: rgba(255,215,0,.35);color:#05202a;font-weight:700}
+  .instructions {
+  margin-top: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);}
+ .instructions h3 {
+  margin: 0 0 10px 0;
+  color: var(--accent);}
+ .instructions ul {
+  padding-left: 20px;
+  margin: 0;}
+ .instructions li {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 5px;}
+  #creditFooter {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 12px;
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;}
+
+  /* Planet Selection Overlay */
+  #planet-selection {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: url('images/background.gif') no-repeat center center fixed;
+    background-size: cover;
+    animation: fadeIn 1s ease-in-out;
+    z-index: 40;
+    display: none;
+  }
+
+  .planet-card {
+    width: min(640px, 92vw);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 22px;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+  .planet-card h2 {
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+  }
+  .planet-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 15px;
+  }
+  .planet-button {
+    flex: 1 1 calc(33.33% - 15px);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  .planet-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    transition: background 0.3s ease;
+  }
+  .planet-button:hover::before {
+    background: rgba(0, 0, 0, 0.2);
+  }
+  .planet-button span {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Planet-specific backgrounds */
+  .planet-button[data-planet="Earth"] { background-image: url('earth.jpg'); }
+  .planet-button[data-planet="Moon"] { background-image: url('moon.jpg'); }
+  .planet-button[data-planet="Mars"] { background-image: url('mars.jpg'); }
+  .planet-button[data-planet="Jupiter"] { background-image: url('jupiter.jpg'); }
+  .planet-button[data-planet="Saturn"] { background-image: url('saturn.jpg'); }
+  .planet-button[data-planet="Uranus"] { background-image: url('uranus.jpg'); }
+  .planet-button[data-planet="Neptune"] { background-image: url('neptune.jpg'); }
+  .planet-button[data-planet="Venus"] { background-image: url('venus.jpg'); }
+  
+  .planet-button:hover {
+    transform: translateY(-5px) scale(1.05);
+    border-color: #FFD700;
+  }
 
   /* App layout */
   #app{
@@ -87,6 +197,8 @@
   .message{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px 22px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);font-weight:700;color:var(--accent-2);pointer-events:auto}
   #endModal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;padding:18px;background:rgba(1,6,12,0.95);border-radius:12px;display:none;text-align:center;width:360px}
   #endModal p{color:#e7f9ff}
+  #leaderboard-container ol { text-align: left; }
+  #leaderboard-container li { margin-bottom: 5px; }
   #confettiCanvas{position:absolute;inset:0;pointer-events:none;z-index:45}
 
   @media (max-width:880px){ .main{flex-direction:column;height:auto}.left{width:100%} }
@@ -101,9 +213,35 @@
       <input id="playerName" type="text" placeholder="e.g., John" />
       <label for="playerEmail">School email</label>
       <input id="playerEmail" type="email" placeholder="e.g., john@school.edu" />
+      <div class="instructions">
+        <h3>Game Rules:</h3>
+        <ul>
+          <li>You have 5 chances to hit the target.</li>
+          <li>Gravity depends on the planet selected.</li>
+          <li>After every shot, the wall height and target distance will vary.</li>
+          <li>You cannot change the planet until you finish the game (5 shots).</li>
+        </ul>
+      </div>
       <div class="login-actions">
         <button id="startDemo">Start Demo (skip)</button>
         <button id="startGame" class="primary">Start Game</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="planet-selection">
+    <div class="planet-card">
+      <h2>Select Your Planet</h2>
+      <h3>Gravity changes based on the planet selected</h3>
+      <div class="planet-buttons">
+        <button class="planet-button" data-planet="Earth"><span>Earth</span></button>
+        <button class="planet-button" data-planet="Moon"><span>Moon</span></button>
+        <button class="planet-button" data-planet="Mars"><span>Mars</span></button>
+        <button class="planet-button" data-planet="Jupiter"><span>Jupiter</span></button>
+        <button class="planet-button" data-planet="Saturn"><span>Saturn</span></button>
+        <button class="planet-button" data-planet="Uranus"><span>Uranus</span></button>
+        <button class="planet-button" data-planet="Neptune"><span>Neptune</span></button>
+        <button class="planet-button" data-planet="Venus"><span>Venus</span></button>
       </div>
     </div>
   </div>
@@ -113,6 +251,7 @@
       <div class="player-info">
         <div class="stat">Player: <span id="playerBadge">—</span></div>
         <div class="stat">Email: <span id="emailBadge">—</span></div>
+        <div class="stat">Planet: <span id="planetBadge">—</span></div>
         <div class="stat">Shots left: <span id="attemptsBadge">5</span></div>
         <div class="stat">Score: <span id="scoreBadge">0</span></div>
       </div>
@@ -227,10 +366,11 @@ const wallHitSound = new Audio('wall_hit.mp3');
 wallHitSound.load();
 const whooshSound = new Audio('whoosh.mp3');
 whooshSound.load();
-
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-function distance(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
-function randFloat(min, max) { return Math.random() * (max - min) + min; }
+function distance(a,b){ return Math.hypot(a.x-b.x, a.y-b.y);
+}
+function randFloat(min, max) { return Math.random() * (max - min) + min;
+}
 async function submitScore(playerName, playerEmail, finalScore) {
     const endpoint = 'https://projectile-game-backend.onrender.com/submit-score';
     const data = {
@@ -238,7 +378,6 @@ async function submitScore(playerName, playerEmail, finalScore) {
         email: playerEmail,
         score: finalScore
     };
-
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -247,7 +386,6 @@ async function submitScore(playerName, playerEmail, finalScore) {
             },
             body: JSON.stringify(data),
         });
-
         if (response.ok) {
             console.log('Score submitted successfully!');
         } else {
@@ -261,14 +399,13 @@ async function submitScore(playerName, playerEmail, finalScore) {
 async function fetchAndDisplayScores() {
     const endpoint = 'https://projectile-game-backend.onrender.com/high-scores';
     const leaderboardList = document.createElement('ul');
-
     try {
         const response = await fetch(endpoint);
         const scores = await response.json();
         const container = document.getElementById('leaderboard-container');
         if (container) {
-            container.innerHTML = '<h3>Top Scores</h3>'; // Add a title
-
+            container.innerHTML = '<h3>Top Scores</h3>';
+            // Add a title
             if (scores.length === 0) {
                 container.innerHTML += '<p>No scores yet. Be the first!</p>';
             } else {
@@ -282,13 +419,15 @@ async function fetchAndDisplayScores() {
             }
         }
     } catch (error) {
-        console.error('Error fetching scores:', error);
+            console.error('Error fetching scores:', error);
     }
 }
 
 /* ---------- DOM refs ---------- */
 const login = $('login'), startGameBtn = $('startGame'), startDemo = $('startDemo'), playerNameInput = $('playerName'), playerEmailInput = $('playerEmail');
-const app = $('app'), playerBadge = $('playerBadge'), emailBadge = $('emailBadge'), attemptsBadge = $('attemptsBadge'), scoreBadge = $('scoreBadge');
+const planetSelection = $('planet-selection');
+const planetButtons = document.querySelectorAll('.planet-button');
+const app = $('app'), playerBadge = $('playerBadge'), emailBadge = $('emailBadge'), attemptsBadge = $('attemptsBadge'), scoreBadge = $('scoreBadge'), planetBadge = $('planetBadge');
 const launcherHeightRange = $('launcherHeightRange'), launcherHeightNum = $('launcherHeightNum');
 const angleRange = $('angleRange'), angleNum = $('angleNum');
 const speedRange = $('speedRange'), speedNum = $('speedNum');
@@ -299,7 +438,6 @@ const shootBtn = $('shootBtn'), nextBtn = $('nextBtn'), resetShotBtn = $('resetS
 const scene = $('scene'), confettiCanvas = $('confettiCanvas'), hud = $('hud'), overlay = $('overlay');
 const endModal = $('endModal'), endText = $('endText'), tryAgainBtn = $('tryAgainBtn'), quitBtn = $('quitBtn');
 const resetGameBtn = $('resetGame');
-
 /* Linking Range inputs with number inputs*/
 function linkRangeNumber(rangeEl, numEl){
   rangeEl.addEventListener('input', e => { if(document.activeElement !== numEl) numEl.value = rangeEl.value; });
@@ -315,7 +453,6 @@ linkRangeNumber(targetDistRange, targetDistNum);
 /* Canvas setup & DPI-aware rendering */
 const ctx = scene.getContext('2d');
 const cctx = confettiCanvas.getContext('2d');
-
 function resizeCanvas(){
   const rect = scene.getBoundingClientRect();
   scene.width = Math.round(rect.width * dpr);
@@ -336,13 +473,21 @@ window.addEventListener('resize', resizeCanvas);
 /* World coords (meters) */
 const BALL_RADIUS_M = 0.12;
 const WALL_WIDTH_M = 0.6;
-const GRAVITY = 9.81;
+let GRAVITY = 9.81; // Initial gravity for Earth
+const planetGravity = {
+  'Earth': 9.81,
+  'Moon': 1.62,
+  'Mars': 3.71,
+  'Jupiter': 24.79,
+  'Saturn': 10.44,
+  'Uranus': 8.69,
+  'Neptune': 11.15,
+  'Venus': 8.87
+};
 const rings = [0.4,0.9,1.5,2.2,3.0];
 const ringScores = [100,75,50,25,15];
-
 /* camera pan (world meters) */
 let pan = { x: 0, y: 0 };
-
 /* compute world size (meters) */
 function computeExtents(){
   const tDist = parseFloat(targetDistNum.value);
@@ -385,7 +530,8 @@ function drawGrid(){
   ctx.save();
   ctx.lineWidth = 1;
   ctx.strokeStyle = "rgba(255,255,255,0.03)";
-  for(let gx=0; gx<=W; gx+=step){ const a=worldToCanvas(gx,0), b=worldToCanvas(gx,H); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+  for(let gx=0; gx<=W; gx+=step){ const a=worldToCanvas(gx,0), b=worldToCanvas(gx,H); ctx.beginPath(); ctx.moveTo(a.x,a.y);
+  ctx.lineTo(b.x,b.y); ctx.stroke(); }
   for(let gy=0; gy<=H; gy+=step){ const a=worldToCanvas(0,gy), b=worldToCanvas(W,gy); ctx.beginPath(); ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke(); }
   ctx.restore();
 }
@@ -416,15 +562,14 @@ function drawLauncherGraphic(launcherX, launcherH, angleDeg){
 
   ctx.save();
   ctx.translate(base.x, base.y);
-
   // Wheels/Base Shadow
   ctx.beginPath();
   ctx.ellipse(0, 15, 30, 15, 0, 0, Math.PI*2);
   ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fill();
-
   // Base Body - more industrial grey/steel
   const baseWidth = 50; // pixels
-  const baseHeight = 25; // pixels
+  const baseHeight = 25;
+  // pixels
   ctx.fillStyle = '#696969'; // Dim Gray
   roundRect(ctx, -baseWidth/2, -baseHeight/2 + 5, baseWidth, baseHeight, 8); ctx.fill();
   ctx.strokeStyle = '#4F4F4F'; ctx.lineWidth = 2; ctx.stroke(); // Darker grey border
@@ -434,20 +579,27 @@ function drawLauncherGraphic(launcherX, launcherH, angleDeg){
   ctx.rotate(-angleRad);
 
   const barrelLenPx = muzzleLen * worldToCanvas(1,0).s; // Scale barrel length
-  const barrelHeightPx = 25; // Fixed height for the barrel
+  const barrelHeightPx = 25;
+  // Fixed height for the barrel
 
   const g = ctx.createLinearGradient(0, -barrelHeightPx/2, barrelLenPx + 20, barrelHeightPx/2);
-  g.addColorStop(0, '#A9A9A9'); // DarkGray - start
+  g.addColorStop(0, '#A9A9A9');
+  // DarkGray - start
   g.addColorStop(0.5, '#D3D3D3'); // LightGrey - middle (highlight)
-  g.addColorStop(1, '#A9A9A9'); // DarkGray - end
+  g.addColorStop(1, '#A9A9A9');
+  // DarkGray - end
   ctx.fillStyle = g;
-  roundRect(ctx, 0, -barrelHeightPx/2, barrelLenPx + 20, barrelHeightPx, 10); // Barrel with round edges
+  roundRect(ctx, 0, -barrelHeightPx/2, barrelLenPx + 20, barrelHeightPx, 10);
+  // Barrel with round edges
   ctx.fill();
-  ctx.strokeStyle = '#808080'; ctx.lineWidth = 2; ctx.stroke(); // Grey border
+  ctx.strokeStyle = '#808080'; ctx.lineWidth = 2; ctx.stroke();
+  // Grey border
 
   // Muzzle (end of barrel)
-  ctx.fillStyle = '#4F4F4F'; // Darker grey
-  roundRect(ctx, barrelLenPx + 15, -barrelHeightPx/2 + 2, 15, barrelHeightPx - 4, 5); // Recessed muzzle
+  ctx.fillStyle = '#4F4F4F';
+  // Darker grey
+  roundRect(ctx, barrelLenPx + 15, -barrelHeightPx/2 + 2, 15, barrelHeightPx - 4, 5);
+  // Recessed muzzle
   ctx.fill();
 
   ctx.restore(); // End barrel rotation
@@ -458,7 +610,8 @@ function drawLauncherGraphic(launcherX, launcherH, angleDeg){
   ctx.fillStyle = '#808080'; ctx.fill();
   ctx.strokeStyle = '#4F4F4F'; ctx.lineWidth = 1; ctx.stroke();
 
-  ctx.restore(); // End base translation
+  ctx.restore();
+  // End base translation
 }
 
 /* Eye-catchy wall */
@@ -468,11 +621,9 @@ function drawWall(wallX, wallH){
 
   const wallCanvasWidth = br.x - tl.x;
   const wallCanvasHeight = br.y - tl.y;
-
   // Base Concrete/Stone color
   ctx.fillStyle = '#8B4513'; // SaddleBrown
   ctx.fillRect(tl.x, tl.y, wallCanvasWidth, wallCanvasHeight);
-
   // Add a subtle gradient for depth (lighter at top, darker at bottom)
   const gradient = ctx.createLinearGradient(tl.x, tl.y, tl.x, br.y);
   gradient.addColorStop(0, 'rgba(255,255,255,0.1)');
@@ -506,6 +657,8 @@ function drawTargetFlat(targetX){
   const colors = ['#FF2400', '#FFA500', '#FFB961', '#FFFF00', '#FFFFFF'];
   for(let i = rings.length-1; i >= 0; i--){
     const r = rings[i] * s;
+    const innerR = (i > 0 ? rings[i-1] : 0) * s;
+    const scoreY = center.y - (((r + innerR) / 2) * vScale);
     ctx.beginPath();
     ctx.ellipse(center.x, center.y, r, r * vScale, 0, 0, Math.PI*2);
     ctx.fillStyle = colors[i];
@@ -517,7 +670,7 @@ function drawTargetFlat(targetX){
     ctx.font = `bold ${Math.min(18, 10 + s*0.2)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(ringScores[i], center.x, center.y - (r * vScale) + 10);
+    ctx.fillText(ringScores[i], center.x, scoreY);
   }
   
   const bullR = rings[0] * s;
@@ -525,7 +678,8 @@ function drawTargetFlat(targetX){
   ctx.ellipse(center.x, center.y, bullR * 0.6, bullR * 0.6 * vScale, 0, 0, Math.PI*2);
   ctx.fillStyle = '#FF2400';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1; ctx.stroke();
   ctx.beginPath();
   ctx.ellipse(center.x, center.y, 6, 6 * vScale, 0, 0, Math.PI*2);
   ctx.fillStyle = '#990000'; ctx.fill();
@@ -540,7 +694,6 @@ function drawPathAndBall(){
     if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
   }
   ctx.stroke(); ctx.restore();
-
   const b = worldToCanvas(state.pos.x, state.pos.y);
   ctx.beginPath(); ctx.arc(b.x, b.y, BALL_RADIUS_M * worldToCanvas(1,0).s, 0, Math.PI*2);
   ctx.fillStyle = '#FF4500'; ctx.fill(); ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.stroke();
@@ -561,7 +714,6 @@ function draw(){
 
   const wallX = parseFloat(wallDistNum.value), wallH = parseFloat(wallHeightNum.value);
   drawWall(wallX, wallH);
-
   const targetX = parseFloat(targetDistNum.value);
   drawTargetFlat(targetX);
 
@@ -574,13 +726,13 @@ let path = [];
 let running = false, landed = false;
 let shotsLeft = 5, shotsMade = 0, score = 0;
 let raf = null;
-
 /* prepare shot (set ball at canon) */
 function prepareShot(){
   const launcherX = 1.2;
   const launcherH = parseFloat(launcherHeightNum.value);
   const angleRad = parseFloat(angleNum.value) * Math.PI/180;
-  const muzzleLen = 1.2; // Adjusted muzzle length
+  const muzzleLen = 1.2;
+  // Adjusted muzzle length
   const muzzle = { x: launcherX + Math.cos(angleRad)*muzzleLen, y: launcherH + Math.sin(angleRad)*muzzleLen };
   const speed = parseFloat(speedNum.value);
 //set initial positions and velocities
@@ -590,12 +742,18 @@ function prepareShot(){
   state.pos_init.y = launcherH;
   state.vel.x = speed * Math.cos(angleRad); //v0x=v0*cos(θ)
   state.vel.y = speed * Math.sin(angleRad); //v0y=v0*sin(θ)
-  state.t = 0; path = [{ x: state.pos.x, y: state.pos.y }]; landed=false; running=false; nextBtn.disabled=true;
+  state.t = 0;
+  path = [{ x: state.pos.x, y: state.pos.y }]; landed=false; running=false; nextBtn.disabled=true;
   updateHud(); draw();
 }
 
 /* HUD */
-function updateHud(){ hud.textContent = `Instantaneous Position of Projectile t=${state.t.toFixed(2)}s · x=${state.pos.x.toFixed(2)}m · y=${state.pos.y.toFixed(2)}m`; attemptsBadge.textContent = shotsLeft; scoreBadge.textContent = score; }
+function updateHud(){ 
+  hud.textContent = `Instantaneous Position of Projectile t=${state.t.toFixed(2)}s · x=${state.pos.x.toFixed(2)}m · y=${state.pos.y.toFixed(2)}m`; 
+  attemptsBadge.textContent = shotsLeft;
+  scoreBadge.textContent = score; 
+  planetBadge.textContent = `${player.planet} (${planetGravity[player.planet]} m/s²)`;
+}
 
 /* step function */
 function step(){
@@ -605,25 +763,31 @@ function step(){
   state.pos.x = state.pos_init.x + state.vel.x * state.t;//x(t) = x0+V0x*t
   state.pos.y = state.pos_init.y + state.vel.y * state.t - 0.5 * GRAVITY * Math.pow(state.t, 2);//y(t) = y0 + V0y*t − 0.5*g*t²
   path.push({ x: state.pos.x, y: Math.max(0, state.pos.y) });
-
   // wall collision
   const wallX = parseFloat(wallDistNum.value), wallH = parseFloat(wallHeightNum.value);
   if (state.pos.x + BALL_RADIUS_M > wallX && state.pos.x - BALL_RADIUS_M < wallX + WALL_WIDTH_M) {
     if (state.pos.y - BALL_RADIUS_M <= wallH && state.pos.y + BALL_RADIUS_M >= 0) {
-      running=false; landed=true;wallHitSound.play(); onShotEnd({ kind:'wall' }); draw(); updateHud(); return;
+      running=false;
+      landed=true;wallHitSound.play(); onShotEnd({ kind:'wall' }); draw(); updateHud(); return;
     }
   }
 
   // ground impact (target lies at y=0)
   if (state.pos.y <= 0) {
-    running=false; landed=true;
+    running=false;
+    landed=true;
     state.pos.y = 0;
     const targetX = parseFloat(targetDistNum.value);
     const dx = Math.abs(state.pos.x - targetX);
     let idx = rings.findIndex(r => dx <= r);
-    if (idx >= 0) { const pts = ringScores[idx]; hitSound.play();onShotEnd({ kind:'target', points: pts, idx, dist: dx }); }
-    else missSound.play();
-                      onShotEnd({ kind:'ground' });
+    if (idx >= 0) {
+      const pts = ringScores[idx];
+      hitSound.play();
+      onShotEnd({ kind:'target', points: pts, idx, dist: dx });
+    } else {
+      missSound.play();
+      onShotEnd({ kind:'ground' });
+    }
     draw(); updateHud(); return;
   }
 
@@ -636,37 +800,39 @@ function step(){
 
 /* shot end handling */
 function onShotEnd(result){
-  let msg='';
-  if (result.kind === 'target'){ score += result.points; msg = `Hit! +${result.points} pts`; }
-  else if (result.kind === 'wall'){ msg = 'Hit the wall! 0 pts'; }
-  else msg = 'Missed. 0 pts';
-  shotsLeft -= 1; updateHud(); showOverlay(msg);
+  let msg='';
+  if (result.kind === 'target'){ score += result.points; msg = `Hit! +${result.points} pts`;
+  }
+  else if (result.kind === 'wall'){ msg = 'Hit the wall! 0 pts'; }
+  else msg = 'Missed. 0 pts';
+  shotsLeft -= 1; updateHud(); showOverlay(msg);
     whooshSound.pause();
     whooshSound.currentTime = 0;
-  if (shotsLeft <= 0){
-    setTimeout(()=> {
-      endText.textContent = (score>0) ? `🎉 Congratulations ${player.name || 'Player'} — your score is ${score}!` : `😕 Better luck next time, ${player.name || 'Player'}. Score: ${score}` ;
-      endModal.style.display='block';
-      fetchAndDisplayScores();
-      if(score > 0) {
-        winSound.play(); 
-        startConfetti();
-      } else { 
-        stopConfetti(); 
-      }
-      shootBtn.disabled=true; nextBtn.disabled=true; resetShotBtn.disabled=true;
-      enableManualControls(true);
-      submitScore(player.name, player.email, score);
-    }, 900);
-  } else {
-    setRandomPositions();
-    prepareShot();
-  }
+  if (shotsLeft <= 0){
+    setTimeout(()=> {
+      endText.textContent = (score>0) ? `🎉 Congratulations ${player.name || 'Player'} — your score is ${score}!` : `😕 Better luck next time, ${player.name || 'Player'}. Score: ${score}` ;
+      endModal.style.display='block';
+      fetchAndDisplayScores();
+      if(score > 0) {
+        winSound.play(); 
+        startConfetti();
+      } else { 
+        stopConfetti(); 
+      }
+      shootBtn.disabled=true; nextBtn.disabled=true; resetShotBtn.disabled=true;
+      enableManualControls(true);
+      submitScore(player.name, player.email, score);
+    }, 900);
+  } else {
+    setRandomPositions();
+    prepareShot();
+  }
 }
 
 /* overlay message */
 function showOverlay(text){
-  overlay.innerHTML = ''; const el = document.createElement('div'); el.className='message'; el.textContent = text; overlay.appendChild(el); overlay.style.pointerEvents='none';
+  overlay.innerHTML = ''; const el = document.createElement('div'); el.className='message';
+  el.textContent = text; overlay.appendChild(el); overlay.style.pointerEvents='none';
   setTimeout(()=>{ overlay.innerHTML=''; }, 1400);
 }
 
@@ -701,10 +867,10 @@ scene.addEventListener('pointerdown', e=>{
   const wallX = parseFloat(wallDistNum.value), wallH = parseFloat(wallHeightNum.value);
   if (!running && wallDistRange.disabled && world.x >= wallX - 0.6 && world.x <= wallX + WALL_WIDTH_M + 0.6 && world.y <= wallH + 0.5 && world.y >= -1){ pointerGrab = {type:'wall'}; return; }
   const targetX = parseFloat(targetDistNum.value), targetY = 0;
-  if (!running && targetDistRange.disabled && Math.abs(world.x - targetX) <= 1.5 && Math.abs(world.y - targetY) <= 1.5){ pointerGrab = {type:'target'}; return; }
+  if (!running && targetDistRange.disabled && Math.abs(world.x - targetX) <= 1.5 && Math.abs(world.y - targetY) <= 1.5){ pointerGrab = {type:'target'}; return;
+  }
   pointerGrab = { type:'pan', start:{x:e.clientX, y:e.clientY, panX:pan.x, panY:pan.y} };
 });
-
 scene.addEventListener('pointermove', e=>{
   if(!pointerDown || !pointerGrab || running) return;
   const rect = scene.getBoundingClientRect();
@@ -720,12 +886,13 @@ scene.addEventListener('pointermove', e=>{
   } else if (pointerGrab.type === 'wall' && !wallDistRange.disabled){
     let newWallX = Math.max(6, world.x); 
     if (newWallX >= parseFloat(targetDistNum.value) - 1.0) newWallX = parseFloat(targetDistNum.value) - 1.0;
-    wallDistNum.value = newWallX.toFixed(2); wallDistRange.value = newWallX.toFixed(2);
+    wallDistNum.value = newWallX.toFixed(2);
+    wallDistRange.value = newWallX.toFixed(2);
     let newWallH = clamp(world.y, parseFloat(wallHeightRange.min), parseFloat(wallHeightRange.max));
     wallHeightNum.value = newWallH.toFixed(2); wallHeightRange.value = newWallH.toFixed(2);
     if(!running) prepareShot();
   } else if (pointerGrab.type === 'target' && !targetDistRange.disabled){
-    let newTargetX = Math.max(parseFloat(wallDistNum.value) + 1.0, world.x); 
+    let newTargetX = Math.max(parseFloat(wallDistNum.value) + 1.0, world.x);
     targetDistNum.value = newTargetX.toFixed(2); targetDistRange.value = newTargetX.toFixed(2);
     if(!running) prepareShot();
   } else if (pointerGrab.type === 'pan'){
@@ -738,7 +905,6 @@ scene.addEventListener('pointermove', e=>{
 });
 
 scene.addEventListener('pointerup', e=>{ pointerDown=false; pointerGrab=null; scene.releasePointerCapture && scene.releasePointerCapture(e.pointerId); });
-
 /* keyboard pan (arrows) */
 window.addEventListener('keydown', e=>{
   if(e.key==='ArrowLeft') pan.x = Math.max(0, pan.x - 2);
@@ -747,10 +913,8 @@ window.addEventListener('keydown', e=>{
   if(e.key==='ArrowDown') pan.y = pan.y + 1.5;
   draw();
 });
-
 /* ---------- UI & game flow ---------- */
-let player = { name:'', email:'' };
-
+let player = { name:'', email:'', planet:'' };
 $('startGame').addEventListener('click', ()=>{
   const name = playerNameInput.value.trim(), email = playerEmailInput.value.trim();
   if(!name){ alert('Please enter your name'); playerNameInput.focus(); return; }
@@ -758,9 +922,25 @@ $('startGame').addEventListener('click', ()=>{
   if(!/^[^\s@]+@[^\s@]+\.(edu|school\.edu|school\.com)$/i.test(email)){
     if(!confirm('Email does not look like a school email. Continue?')) return;
   }
-  player.name = name; player.email = email; beginGame();
+  player.name = name; player.email = email;
+  login.style.display = 'none';
+  planetSelection.style.display = 'grid';
 });
-$('startDemo').addEventListener('click', ()=>{ player.name='Demo Player'; player.email='demo@school.edu'; beginGame(); });
+$('startDemo').addEventListener('click', ()=>{ 
+  player.name='Demo Player'; 
+  player.email='demo@school.edu'; 
+  login.style.display = 'none';
+  planetSelection.style.display = 'grid';
+});
+
+planetButtons.forEach(button => {
+  button.addEventListener('click', (e) => {
+    const selectedPlanet = e.currentTarget.dataset.planet;
+    player.planet = selectedPlanet;
+    GRAVITY = planetGravity[selectedPlanet];
+    beginGame();
+  });
+});
 
 function setRandomPositions(){
   const newTargetX = randFloat(15, 100);
@@ -786,17 +966,35 @@ function enableManualControls(enabled){
 }
 
 function beginGame(){
-  login.style.display='none'; app.style.display='grid'; playerBadge.textContent = player.name; emailBadge.textContent = player.email;
-  shotsLeft = 5; score = 0; shotsMade = 0; running=false; endModal.style.display='none';
+  planetSelection.style.display='none'; 
+  app.style.display='grid'; 
+  playerBadge.textContent = player.name; 
+  emailBadge.textContent = player.email;
+  shotsLeft = 5; 
+  score = 0;
+  shotsMade = 0; 
+  running=false; 
+  endModal.style.display='none';
   setRandomPositions();
   enableManualControls(false);
-  prepareShot(); resizeCanvas(); updateHud();
+  prepareShot(); 
+  resizeCanvas(); 
+  updateHud();
 }
 
 resetGameBtn.addEventListener('click', ()=>{
-  if(confirm('Restart and return to login?')){ login.style.display='grid'; app.style.display='none'; playerNameInput.value=''; playerEmailInput.value=''; overlay.innerHTML=''; stopConfetti(); if(raf) cancelAnimationFrame(raf); enableManualControls(true); }
+  if(confirm('Restart and return to login?')){ 
+    login.style.display='grid'; 
+    app.style.display='none'; 
+    planetSelection.style.display='none';
+    playerNameInput.value=''; 
+    playerEmailInput.value=''; 
+    overlay.innerHTML=''; 
+    stopConfetti(); 
+    if(raf) cancelAnimationFrame(raf); 
+    enableManualControls(true); 
+  }
 });
-
 $('shootBtn').addEventListener('click', ()=>{ 
   if(running || shotsLeft <= 0) return; 
   shotsMade++;
@@ -808,7 +1006,13 @@ $('shootBtn').addEventListener('click', ()=>{
 });
 $('resetShotBtn').addEventListener('click', ()=>{ prepareShot(); overlay.innerHTML=''; });
 tryAgainBtn.addEventListener('click', ()=>{ endModal.style.display='none'; stopConfetti(); shotsLeft=5; score=0; shotsMade = 0; shootBtn.disabled=false; resetShotBtn.disabled=false; enableManualControls(false); setRandomPositions(); prepareShot(); updateHud(); });
-quitBtn.addEventListener('click', ()=>{ endModal.style.display='none'; stopConfetti(); login.style.display='grid'; app.style.display='none'; enableManualControls(true); });
+quitBtn.addEventListener('click', ()=>{ 
+  endModal.style.display='none'; 
+  stopConfetti(); 
+  login.style.display='grid'; 
+  app.style.display='none'; 
+  enableManualControls(true); 
+});
 
 /* update when sliders change */
 [launcherHeightRange, launcherHeightNum, angleRange, angleNum, speedRange, speedNum,
@@ -817,7 +1021,6 @@ quitBtn.addEventListener('click', ()=>{ endModal.style.display='none'; stopConfe
   if(parseFloat(wallDistNum.value) > parseFloat(targetDistNum.value) - 1){ wallDistNum.value = Math.max(1, parseFloat(targetDistNum.value) - 1); wallDistRange.value = wallDistNum.value; }
   if(!running) prepareShot(); updateHud();
  }); });
-
 /* ---------- Confetti control (purple & white while end modal visible) ---------- */
 let confettiInterval = null;
 function startConfetti(){
@@ -832,5 +1035,8 @@ function stopConfetti(){ if(confettiInterval){ clearInterval(confettiInterval); 
 /* ---------- Init ---------- */
 prepareShot(); resizeCanvas(); updateHud();
 </script>
+ <div id="creditFooter">
+        Game is designed by Prof. Nicolas Zoghb and Sushma Gudi for University of Bridgeport
+ </div>
 </body>
 </html>
